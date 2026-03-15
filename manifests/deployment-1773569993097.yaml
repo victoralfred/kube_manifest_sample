@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-1773569993097
+  namespace: default
+  labels:
+    app: deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deployment
+  template:
+    metadata:
+      labels:
+        app: deployment
+    spec:
+      containers:
+        - name: deployment-1773569993097
+          image: "nginx:latest"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            readOnlyRootFilesystem: false
+            privileged: false
+            allowPrivilegeEscalation: false  # hardened: prevents child processes gaining more privileges than the parent
+            capabilities:
+              drop:
+                - ALL  # hardened: drop all Linux capabilities; add back only what's needed
+          resources:
+            requests:
+              cpu: 100m  # hardened: prevents starvation scheduling on overloaded nodes
+              memory: 128Mi  # hardened: baseline memory request for scheduler placement
+            limits:
+              cpu: 500m  # hardened: prevents noisy-neighbour CPU hogging
+              memory: 256Mi  # hardened: bounds memory consumption to prevent node OOM
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: false
+        seccompProfile:
+          type: RuntimeDefault  # hardened: restricts syscalls to the default runtime allowlist
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "25%"
+      maxUnavailable: "25%"
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
